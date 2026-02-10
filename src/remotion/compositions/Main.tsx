@@ -3,10 +3,10 @@ import {
   Audio,
   Img,
   interpolate,
-  Sequence,
   useCurrentFrame,
   useVideoConfig,
   Easing,
+  spring,
 } from "remotion";
 import { loadFont as loadOutfit } from "@remotion/google-fonts/Outfit";
 import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
@@ -16,10 +16,6 @@ import {
   createTiming,
   StompStream,
   PushStream,
-  FadeInWords,
-  BounceChars,
-  SlideInText,
-  BlurReveal,
   Counter,
   BrowserMockup,
   Camera,
@@ -30,6 +26,7 @@ import {
   Particles,
   LinearGradient,
   Vignette,
+  TextAnimation,
 } from "../library";
 
 // Load fonts
@@ -56,6 +53,119 @@ const AI_IMAGE_URL =
   "https://pub-e3bfc0083b0644b296a7080b21024c5f.r2.dev/superlinks/1770717328176_yvwl5evow6_ai_network_visualization.png";
 
 // ============================================
+// Animated Text Components (using TextAnimation with GSAP)
+// ============================================
+
+interface AnimatedTextProps {
+  children: string;
+  className?: string;
+  style?: React.CSSProperties;
+  startFrom?: number;
+}
+
+const FadeUpText: React.FC<AnimatedTextProps> = ({
+  children,
+  className,
+  style,
+  startFrom = 0,
+}) => (
+  <TextAnimation
+    className={className}
+    style={style}
+    startFrom={startFrom}
+    createTimeline={({ textRef, tl, SplitText }) => {
+      const split = new SplitText(textRef.current, { type: "words" });
+      tl.from(split.words, {
+        opacity: 0,
+        y: 40,
+        stagger: 0.08,
+        duration: 0.6,
+        ease: "power3.out",
+      });
+      return tl;
+    }}
+  >
+    {children}
+  </TextAnimation>
+);
+
+const BounceText: React.FC<AnimatedTextProps> = ({
+  children,
+  className,
+  style,
+  startFrom = 0,
+}) => (
+  <TextAnimation
+    className={className}
+    style={style}
+    startFrom={startFrom}
+    createTimeline={({ textRef, tl, SplitText }) => {
+      const split = new SplitText(textRef.current, { type: "chars" });
+      tl.from(split.chars, {
+        opacity: 0,
+        y: 60,
+        scaleY: 0,
+        stagger: 0.03,
+        duration: 0.5,
+        ease: "back.out(2)",
+      });
+      return tl;
+    }}
+  >
+    {children}
+  </TextAnimation>
+);
+
+const BlurInText: React.FC<AnimatedTextProps> = ({
+  children,
+  className,
+  style,
+  startFrom = 0,
+}) => (
+  <TextAnimation
+    className={className}
+    style={style}
+    startFrom={startFrom}
+    createTimeline={({ textRef, tl }) => {
+      tl.from(textRef.current, {
+        opacity: 0,
+        filter: "blur(20px)",
+        y: 20,
+        duration: 0.8,
+        ease: "power2.out",
+      });
+      return tl;
+    }}
+  >
+    {children}
+  </TextAnimation>
+);
+
+const SlideUpText: React.FC<AnimatedTextProps> = ({
+  children,
+  className,
+  style,
+  startFrom = 0,
+}) => (
+  <TextAnimation
+    className={className}
+    style={style}
+    startFrom={startFrom}
+    createTimeline={({ textRef, tl }) => {
+      tl.from(textRef.current, {
+        opacity: 0,
+        y: 50,
+        duration: 0.7,
+        ease: "power3.out",
+      });
+      return tl;
+    }}
+  >
+    {children}
+  </TextAnimation>
+);
+
+// ============================================
 // Scene Components
 // ============================================
 
@@ -65,7 +175,6 @@ const AI_IMAGE_URL =
  */
 const HookScene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
   return (
     <AbsoluteFill
@@ -77,18 +186,18 @@ const HookScene: React.FC = () => {
       {/* Animated gradient background */}
       <LinearGradient
         colors={["#09090B", "#1a0a0a", "#09090B"]}
-        direction="diagonal"
+        direction="to-bottom-right"
         animate
-        animationDuration={4}
+        speed={0.25}
       />
 
       {/* Floating particles for depth */}
       <Particles
         count={30}
-        color="#F56B3D"
-        size={3}
+        colors={[COLORS.primary]}
+        size={[2, 4]}
         speed={0.3}
-        opacity={0.4}
+        type="dust"
       />
 
       <Camera
@@ -216,9 +325,12 @@ const ProblemScene: React.FC = () => {
               }),
             }}
           >
-            <FadeInWords className="text-5xl font-bold text-zinc-900">
+            <FadeUpText
+              className="text-5xl font-bold text-zinc-900"
+              startFrom={40}
+            >
               There&apos;s a better way.
-            </FadeInWords>
+            </FadeUpText>
           </div>
         </AbsoluteFill>
       </Camera>
@@ -242,15 +354,15 @@ const SolutionRevealScene: React.FC = () => {
     >
       <LinearGradient
         colors={["#09090B", "#150808", "#09090B"]}
-        direction="radial"
+        direction="to-bottom"
       />
 
       <Particles
         count={40}
-        color="#F56B3D"
-        size={2}
+        colors={[COLORS.primary]}
+        size={[1, 3]}
         speed={0.5}
-        opacity={0.3}
+        type="stars"
       />
 
       <Camera
@@ -330,13 +442,13 @@ const SolutionRevealScene: React.FC = () => {
               marginTop: 16,
             }}
           >
-            <BlurReveal
+            <BlurInText
               className="text-xl tracking-wide"
               style={{ color: COLORS.textMuted }}
               startFrom={50}
             >
               The all-in-one AI platform for creators
-            </BlurReveal>
+            </BlurInText>
           </div>
         </AbsoluteFill>
       </Camera>
@@ -403,16 +515,16 @@ const ProductDemoScene: React.FC = () => {
         { text: "Zero Coding", x: -420, y: -200, delay: 30 },
         { text: "AI-Powered", x: 420, y: -180, delay: 40 },
         { text: "All-in-One", x: -400, y: 200, delay: 50 },
-      ].map((badge, i) => {
+      ].map((badge) => {
         const badgeFrame = frame - badge.delay;
         const opacity = interpolate(badgeFrame, [0, 15], [0, 1], {
           extrapolateLeft: "clamp",
           extrapolateRight: "clamp",
         });
-        const scale = interpolate(badgeFrame, [0, 20], [0.8, 1], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-          easing: Easing.out(Easing.back(2)),
+        const badgeScale = spring({
+          frame: badgeFrame,
+          fps,
+          config: { damping: 12, stiffness: 100 },
         });
 
         return (
@@ -422,7 +534,7 @@ const ProductDemoScene: React.FC = () => {
               position: "absolute",
               left: "50%",
               top: "50%",
-              transform: `translate(calc(-50% + ${badge.x}px), calc(-50% + ${badge.y}px)) scale(${scale})`,
+              transform: `translate(calc(-50% + ${badge.x}px), calc(-50% + ${badge.y}px)) scale(${badgeScale})`,
               opacity,
               padding: "10px 20px",
               background: COLORS.primary,
@@ -457,17 +569,17 @@ const BenefitsScene: React.FC = () => {
     >
       <LinearGradient
         colors={["#09090B", "#0a1015", "#09090B"]}
-        direction="diagonal"
+        direction="to-bottom-right"
         animate
-        animationDuration={5}
+        speed={0.2}
       />
 
       <Particles
         count={25}
-        color="#F56B3D"
-        size={2}
+        colors={[COLORS.primary]}
+        size={[1, 3]}
         speed={0.4}
-        opacity={0.25}
+        type="dust"
       />
 
       <Camera
@@ -595,12 +707,12 @@ const MagicMomentScene: React.FC = () => {
               pulseDuration={3}
             >
               <div className="text-center">
-                <BounceChars
+                <BounceText
                   className="text-6xl font-black text-white"
                   startFrom={25}
                 >
                   Build Faster. Launch Easier.
-                </BounceChars>
+                </BounceText>
               </div>
             </Glow>
           </div>
@@ -614,14 +726,13 @@ const MagicMomentScene: React.FC = () => {
               marginTop: 24,
             }}
           >
-            <SlideInText
+            <SlideUpText
               className="text-3xl font-semibold"
               style={{ color: COLORS.primary }}
-              direction="bottom"
               startFrom={60}
             >
               Grow Limitless.
-            </SlideInText>
+            </SlideUpText>
           </div>
         </AbsoluteFill>
       </Zoom>
@@ -635,8 +746,6 @@ const MagicMomentScene: React.FC = () => {
  * Scene 7: Tagline
  */
 const TaglineScene: React.FC = () => {
-  const frame = useCurrentFrame();
-
   return (
     <AbsoluteFill
       style={{
@@ -672,6 +781,7 @@ const TaglineScene: React.FC = () => {
  */
 const LogoCTAScene: React.FC = () => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
   return (
     <AbsoluteFill
@@ -682,15 +792,15 @@ const LogoCTAScene: React.FC = () => {
     >
       <LinearGradient
         colors={["#09090B", "#120808", "#09090B"]}
-        direction="radial"
+        direction="to-bottom"
       />
 
       <Particles
         count={50}
-        color="#F56B3D"
-        size={2}
+        colors={[COLORS.primary]}
+        size={[1, 3]}
         speed={0.6}
-        opacity={0.3}
+        type="stars"
       />
 
       <AbsoluteFill className="flex flex-col items-center justify-center gap-8">
@@ -754,7 +864,7 @@ const LogoCTAScene: React.FC = () => {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             }),
-            transform: `scale(${interpolate(frame, [60, 85], [0.8, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.back(2)) })})`,
+            transform: `scale(${spring({ frame: frame - 60, fps, config: { damping: 12, stiffness: 100 } })})`,
             marginTop: 16,
           }}
         >
@@ -767,7 +877,6 @@ const LogoCTAScene: React.FC = () => {
               fontSize: 22,
               fontWeight: 700,
               boxShadow: `0 0 30px ${COLORS.primary}50, 0 8px 32px rgba(0,0,0,0.3)`,
-              animation: frame > 85 ? "pulse 2s infinite" : undefined,
             }}
           >
             Start for Free
